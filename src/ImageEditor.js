@@ -110,16 +110,18 @@ export default function ImageEditor() {
         ctx.putImageData(imageData, 0, 0);
     };
 const x=0;
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-        
-    
-        reader.onload = () => {
-            setImage(reader.result);
-            const canvas = canvasRef.current;
+ const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = () => {
+        setImage(reader.result);
+        const canvas = canvasRef.current;
         const ctx = canvas.getContext('2d');
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Reset filters and clear the canvas
+        resetFilters(canvas, ctx);
 
         // Redraw the original image
         if (originalImage) {
@@ -129,19 +131,16 @@ const x=0;
             };
             img.src = originalImage;
         }
-
-            
-            
-        };
-    
-        if (file) {
-            reader.readAsDataURL(file);
-        } else {
-            // If no file selected, reset the image state
-            setImage(null);
-        }
     };
-    
+
+    if (file) {
+        reader.readAsDataURL(file);
+    } else {
+        // If no file selected, reset the image state
+        setImage(null);
+    }
+};
+
   
     const handleContrastChange = (e) => {
         setContrast(e.target.value);
