@@ -374,15 +374,16 @@ const x=0;
                        
                     </div>
 
-                    <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Brightness:</label>
+                   <div className=''>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Brightness</label>
                         <input
                             type="range"
                             min="0"
                             max="200"
                             value={brightness}
                             onChange={handleBrightnessChange}
-                            className="w-full"                        />
+                            className="custom-range ml-2 w-full"                            />
+                       
                     </div>
 
                     <div>
