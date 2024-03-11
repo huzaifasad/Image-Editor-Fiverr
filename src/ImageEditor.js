@@ -20,9 +20,27 @@ export default function ImageEditor() {
     const [redoStack, setRedoStack] = useState([]);
     const [originalImage, setOriginalImage] = useState(null); // Store original image
     const canvasRef = useRef(null);
+    const [firstImageLoad, setFirstImageLoad] = useState(true); // Flag to track first image load
+
 
     useEffect(() => {
         if (image) {
+            if (firstImageLoad) {
+                // Reset filter states to defaults for the first image load
+                setContrast(100);
+                setBrightness(100);
+                setOpacity(100);
+                setGrayscale(0);
+                setSharpness(0);
+                setExtrasharp(0);
+                setLineThickness(2);
+                setCurrentColor('#000000');
+                setCurrentSize(2);
+                setUndoStack([]);
+                setRedoStack([]);
+                setFirstImageLoad(false); // Set flag to false after applying the reset
+            }
+
             setOriginalImage(image); // Store original image when a new image is uploaded
 
             const canvas = canvasRef.current;
@@ -31,7 +49,7 @@ export default function ImageEditor() {
             img.onload = () => {
                 canvas.width = img.width;
                 canvas.height = img.height;
-    
+
                 const isNegative = contrast < 100;
                 const filter = `
                     contrast(${Math.abs(contrast)}%)
@@ -42,20 +60,21 @@ export default function ImageEditor() {
                 `;
                 ctx.filter = filter;
                 ctx.drawImage(img, 0, 0);
-    
+
                 // Apply sharpening
                 applySharpening(ctx, canvas.width, canvas.height, sharpness);
-    
+
                 // Apply additional sharpening
                 const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                 const sharpenedData = extrashapfunction(imageData, extrasharp);
                 ctx.putImageData(sharpenedData, 0, 0);
-    
+
                 setPreviewImage(canvas.toDataURL());
             };
             img.src = image;
         }
-    }, [image, contrast, brightness, opacity, grayscale, sharpness, extrasharp]);
+    }, [image, contrast, brightness, opacity, grayscale, sharpness, extrasharp, firstImageLoad]);
+
     
 
     // Apply sharpening to the canvas context
@@ -90,20 +109,40 @@ export default function ImageEditor() {
 
         ctx.putImageData(imageData, 0, 0);
     };
-
+const x=0;
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         const reader = new FileReader();
-
+        
+    
         reader.onload = () => {
             setImage(reader.result);
-        };
+            const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+        // Redraw the original image
+        if (originalImage) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = originalImage;
+        }
+
+            
+            
+        };
+    
         if (file) {
             reader.readAsDataURL(file);
+        } else {
+            // If no file selected, reset the image state
+            setImage(null);
         }
     };
-
+    
+  
     const handleContrastChange = (e) => {
         setContrast(e.target.value);
     };
@@ -216,6 +255,7 @@ export default function ImageEditor() {
             ctx.stroke();
         }
     };
+   
     const handleReset = () => {
         // Reset all filters and clear the canvas
         setContrast(100);
@@ -231,6 +271,20 @@ export default function ImageEditor() {
         setRedoStack([]);
         setImage(originalImage); // Set image back to original
         setPreviewImage(null);
+
+        // Clear the canvas
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Redraw the original image
+        if (originalImage) {
+            const img = new Image();
+            img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = originalImage;
+        }
     };
     const handleCanvasMouseUp = () => {
         if (tool === 'pencil' || tool === 'eraser') {
@@ -292,57 +346,55 @@ export default function ImageEditor() {
     return (
         <div className='h-screen w-screen flex bg-[#F8DE7F]'>
             <div className='w-[75%] px-2'>
-                <div className='bg-[#fff] text-5xl   h-full  w-full flex items-center justify-center'>
-                <div className='bg-[#fff] text-5xl   h-full w-full flex items-center justify-center'>
-    <canvas
-        ref={canvasRef}
-        onMouseDown={handleCanvasMouseDown}
-        onMouseMove={handleCanvasMouseMove}
-        onMouseUp={handleCanvasMouseUp}
-        style={{ border: '0px solid black', cursor: 'crosshair', width: '100%', height: '100%' }}
-    />
+                <div className='   h-[90%]  w-[97%] flex items-center justify-center'>
+                <canvas
+    key={image} // Add this key that depends on the image state
+    className="relative overflow-hidden bg-[#fff]"
+    ref={canvasRef}
+    onMouseDown={handleCanvasMouseDown}
+    onMouseMove={handleCanvasMouseMove}
+    onMouseUp={handleCanvasMouseUp}
+/>
+
 </div>
 
-                </div>
             </div>
             <div className='w-[24%]'>
                 <div className=' h-screen '>
 
                     <div className=''>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Contrast:</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Contrast:</label>
                         <input
                             type="range"
                             min="0"
                             max="200"
                             value={contrast}
                             onChange={handleContrastChange}
-                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden border border-gray-300 shadow-md"
+                            className="ml-2   w-full"
                         />
                        
                     </div>
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Brightness:</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Brightness:</label>
                         <input
                             type="range"
                             min="0"
                             max="200"
                             value={brightness}
                             onChange={handleBrightnessChange}
-                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
-                        />
+                            className="w-full"                        />
                     </div>
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Opacity:</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Opacity:</label>
                         <input
                             type="range"
                             min="0"
                             max="100"
                             value={opacity}
                             onChange={handleOpacityChange}
-                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
-                        />
+ className="w-full"                           />
                     </div>
 
                     {/* <div>
@@ -357,27 +409,25 @@ export default function ImageEditor() {
                     </div> */}
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Range</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Range</label>
                         <input
                             type="range"
                             min="-200"
                             max="200"
                             value={sharpness}
                             onChange={handleSharpnessChange}
-                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
-                        />
+ className="w-full"                           />
                     </div>
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Line Thickness</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Line Thickness</label>
                         <input
                             type="range"
                             min="0"
                             max="100"
                             value={extrasharp}
                             onChange={handleextraSharpenChange}
-                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
-                                                   />
+ className="w-full"                                                      />
                     </div>
                     <div className="relative inline-block">
   <label className=' items-center mt-2 justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300' >Drawing Tools:</label>
@@ -398,7 +448,7 @@ export default function ImageEditor() {
 
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Color:</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Color:</label>
                         <input
                             type="color"
                             value={currentColor}
@@ -407,15 +457,14 @@ export default function ImageEditor() {
                     </div>
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Size:</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Size:</label>
                         <input
                             type="range"
                             min="1"
                             max="20"
                             value={currentSize}
                             onChange={handleSizeChange}
-                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
-                        />
+ className="w-full"                           />
                     </div>
 
                     <label className="flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300">
