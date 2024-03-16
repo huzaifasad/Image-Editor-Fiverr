@@ -28,6 +28,7 @@ export default function ImageEditor() {
         lineWidth: 2,
         globalCompositeOperation: 'source-over'
     });
+    const [drawings, setDrawings] = useState([]); // Store drawings separately
     const saveDrawingContextSettings = () => {
         const drawingCanvas = drawingCanvasRef.current;
         const ctx = drawingCanvas.getContext('2d');
@@ -88,7 +89,6 @@ export default function ImageEditor() {
                 `;
                 ctx.filter = filter;
                 ctx.drawImage(img, 0, 0);
-
                 if (sharpness !== 0) {
                     applySharpening(ctx, imageCanvas.width, imageCanvas.height, sharpness);
                 }
@@ -98,13 +98,27 @@ export default function ImageEditor() {
                     const sharpenedData = extrashapfunction(imageData, extrasharp);
                     ctx.putImageData(sharpenedData, 0, 0);
                 }
-        
+                redrawDrawings()
+
                 setPreviewImage(imageCanvas.toDataURL());
             };
             img.src = image;
         }
     }, [image, contrast, brightness, opacity, grayscale, sharpness, extrasharp, firstImageLoad]);
+    const redrawDrawings = () => {
+        const drawingCanvas = drawingCanvasRef.current;
+        const ctx = drawingCanvas.getContext('2d');
 
+        drawings.forEach(({ x, y }, index) => {
+            if (index === 0) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+        });
+    };
     const applySharpening = (ctx, width, height, sharpness) => {
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
@@ -279,8 +293,8 @@ export default function ImageEditor() {
         setUndoStack([]);
         setRedoStack([]);
         setImage(originalImage);
-        setZoomLevel(100)
-    
+        setZoomLevel(100);
+       
         const drawingCanvas = drawingCanvasRef.current;
         const ctx = drawingCanvas.getContext('2d');
         ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); // Clear the drawing canvas
@@ -296,7 +310,11 @@ export default function ImageEditor() {
             };
             img.src = originalImage;
         }
+    
+        // Clear drawings state
+        setDrawings([]);
     };
+    
 
     const handleDownload = () => {
         const imageCanvas = imageCanvasRef.current;
@@ -362,9 +380,10 @@ export default function ImageEditor() {
         const y = e.nativeEvent.offsetY;
 
         ctx.lineTo(x, y);
-        ctx.strokeStyle = currentColor;
-        ctx.lineWidth = currentSize;
         ctx.stroke();
+
+        // Store drawings for redrawing after applying filters
+        setDrawings([...drawings, { x, y }]);
     };
 
     // Function to start drawing
@@ -377,8 +396,6 @@ export default function ImageEditor() {
 
         ctx.beginPath();
         ctx.moveTo(x, y);
-        ctx.strokeStyle = currentColor;
-        ctx.lineWidth = currentSize;
     };
 
     // Function to stop drawing
@@ -386,22 +403,31 @@ export default function ImageEditor() {
         setIsDrawing(false);
     };
 // Function to handle mouse down event on the canvas
-const handleCanvasMouseDown = (e) => {
-    if (tool === 'pencil') {
-        startDrawing(e);
-    } else if (tool === 'eraser') {
-        setIsDrawing(true);
-    }
-};
+ const handleCanvasMouseDown = (e) => {
+        if (tool === 'pencil') {
+            startDrawing(e);
+        } else if (tool === 'eraser') {
+            setIsDrawing(true);
+        }
+    };
 
-// Function to handle mouse move event on the canvas
-const handleCanvasMouseMove = (e) => {
-    if (tool === 'pencil') {
-        draw(e);
-    } else if (tool === 'eraser') {
-        erase(e);
-    }
-};
+    // Function to handle mouse move event on the canvas
+    const handleCanvasMouseMove = (e) => {
+        if (tool === 'pencil') {
+            draw(e);
+        } else if (tool === 'eraser') {
+            erase(e);
+        }
+    };
+
+    // Function to handle mouse up event on the canvas
+    const handleCanvasMouseUp = () => {
+        if (tool === 'pencil') {
+            endDrawing();
+        } else if (tool === 'eraser') {
+            setIsDrawing(false);
+        }
+    };
 const erase = (e) => {
     if (!isDrawing) return;
     const drawingCanvas = drawingCanvasRef.current;
@@ -412,13 +438,6 @@ const erase = (e) => {
     ctx.clearRect(x, y, currentSize, currentSize);
 };
 // Function to handle mouse up event on the canvas
-const handleCanvasMouseUp = () => {
-    if (tool === 'pencil') {
-        endDrawing();
-    } else if (tool === 'eraser') {
-        setIsDrawing(false);
-    }
-};
 
     return (
         <div className='h-screen w-screen flex bg-[#F8DE7F]'>
