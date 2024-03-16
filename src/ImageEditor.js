@@ -23,6 +23,30 @@ export default function ImageEditor() {
     const drawingCanvasRef = useRef(null);
     const [firstImageLoad, setFirstImageLoad] = useState(true);
     const [zoomLevel, setZoomLevel] = useState(50); // Default zoom level
+    const [drawingContextSettings, setDrawingContextSettings] = useState({
+        strokeStyle: '#000000',
+        lineWidth: 2,
+        globalCompositeOperation: 'source-over'
+    });
+    const saveDrawingContextSettings = () => {
+        const drawingCanvas = drawingCanvasRef.current;
+        const ctx = drawingCanvas.getContext('2d');
+        setDrawingContextSettings({
+            strokeStyle: ctx.strokeStyle,
+            lineWidth: ctx.lineWidth,
+            globalCompositeOperation: ctx.globalCompositeOperation
+        });
+    };
+
+    // Function to restore drawing context settings
+    const restoreDrawingContextSettings = () => {
+        const drawingCanvas = drawingCanvasRef.current;
+        const ctx = drawingCanvas.getContext('2d');
+        const { strokeStyle, lineWidth, globalCompositeOperation } = drawingContextSettings;
+        ctx.strokeStyle = strokeStyle;
+        ctx.lineWidth = lineWidth;
+        ctx.globalCompositeOperation = globalCompositeOperation;
+    };
 
     const handleZoomChange = (e) => {
         setZoomLevel(parseInt(e.target.value)); // Update zoom level based on the range input value
@@ -255,6 +279,7 @@ export default function ImageEditor() {
         setUndoStack([]);
         setRedoStack([]);
         setImage(originalImage);
+        setZoomLevel(100)
     
         const drawingCanvas = drawingCanvasRef.current;
         const ctx = drawingCanvas.getContext('2d');
@@ -276,20 +301,26 @@ export default function ImageEditor() {
     const handleDownload = () => {
         const imageCanvas = imageCanvasRef.current;
         const drawingCanvas = drawingCanvasRef.current;
+        
+        // Adjust canvas size based on zoom level
+        const canvasWidth = imageCanvas.width * (zoomLevel / 100);
+        const canvasHeight = imageCanvas.height * (zoomLevel / 100);
+        
         const mergedCanvas = document.createElement('canvas');
         const mergedCtx = mergedCanvas.getContext('2d');
     
-        mergedCanvas.width = imageCanvas.width;
-        mergedCanvas.height = imageCanvas.height;
+        mergedCanvas.width = canvasWidth;
+        mergedCanvas.height = canvasHeight;
     
-        mergedCtx.drawImage(imageCanvas, 0, 0);
-        mergedCtx.drawImage(drawingCanvas, 0, 0);
+        mergedCtx.drawImage(imageCanvas, 0, 0, canvasWidth, canvasHeight);
+        mergedCtx.drawImage(drawingCanvas, 0, 0, canvasWidth, canvasHeight);
     
         const link = document.createElement('a');
         link.download = 'edited_image.png';
         link.href = mergedCanvas.toDataURL();
         link.click();
     };
+    
 
     const handlePrint = () => {
         const imageCanvas = imageCanvasRef.current;
@@ -354,25 +385,45 @@ export default function ImageEditor() {
     const endDrawing = () => {
         setIsDrawing(false);
     };
-
-    // Function to handle canvas mouse down event
-    const handleCanvasMouseDown = (e) => {
+// Function to handle mouse down event on the canvas
+const handleCanvasMouseDown = (e) => {
+    if (tool === 'pencil') {
         startDrawing(e);
-    };
+    } else if (tool === 'eraser') {
+        setIsDrawing(true);
+    }
+};
 
-    // Function to handle canvas mouse move event
-    const handleCanvasMouseMove = (e) => {
+// Function to handle mouse move event on the canvas
+const handleCanvasMouseMove = (e) => {
+    if (tool === 'pencil') {
         draw(e);
-    };
+    } else if (tool === 'eraser') {
+        erase(e);
+    }
+};
+const erase = (e) => {
+    if (!isDrawing) return;
+    const drawingCanvas = drawingCanvasRef.current;
+    const ctx = drawingCanvas.getContext('2d');
+    const x = e.nativeEvent.offsetX;
+    const y = e.nativeEvent.offsetY;
 
-    // Function to handle canvas mouse up event
-    const handleCanvasMouseUp = () => {
+    ctx.clearRect(x, y, currentSize, currentSize);
+};
+// Function to handle mouse up event on the canvas
+const handleCanvasMouseUp = () => {
+    if (tool === 'pencil') {
         endDrawing();
-    };
+    } else if (tool === 'eraser') {
+        setIsDrawing(false);
+    }
+};
+
     return (
         <div className='h-screen w-screen flex bg-[#F8DE7F]'>
         <div className='w-[72%] h-screen px-2'>
-            <div className='h-[90%]  w-[97%] flex items-center justify-center'>
+            <div className='h-[97%]  w-[97%] flex items-center justify-center overflow-scroll mt-2'>
               <canvas
     key={image}
     className="relative overflow-hidden bg-[#fff]"
@@ -381,8 +432,10 @@ export default function ImageEditor() {
         drawingCanvasRef.current = canvas;
     }}
     onMouseDown={handleCanvasMouseDown}
-    onMouseMove={handleCanvasMouseMove}
-    onMouseUp={handleCanvasMouseUp}
+        onMouseMove={handleCanvasMouseMove}
+        onMouseUp={handleCanvasMouseUp}
+    style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: '' }}
+
 />
 
             </div>
