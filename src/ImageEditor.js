@@ -459,10 +459,17 @@ const erase = (e) => {
 
             </div>
         </div>
-            <div className='w-[24%]'>
-                <div className=' h-screen '>
+            <div className='w-[24%] h-screen'>
+                <div className=' h-full '>
                 <div>
+                    
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Line Thickness</label>
+                   
+                        <div className="flex justify-between  px-2 top-0">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
+            <span key={number} className="text-xs">{number} |</span>
+        ))}
+    </div>
                         <input
                             type="range"
                             min="0"
@@ -470,10 +477,23 @@ const erase = (e) => {
                             value={extrasharp}
                             onChange={handleextraSharpenChange}
                             className="custom-range ml-2 w-full h-4"                         
- style={{ height: '6px' }}                            />
+ style={{ height: '6px' }}               
+ 
+ 
+ />
+
+
                     </div>
+                    
                     <div>
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Range</label>
+                     
+                     
+                        <div className="flex justify-between  px-2 top-0">
+        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
+            <span key={number} className="text-xs">{number} |</span>
+        ))}
+    </div>
                         <input
                             type="range"
                             min="-200"
@@ -486,6 +506,13 @@ const erase = (e) => {
                     </div>
                     <div>
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Opacity</label>
+                      
+                        <div className="flex justify-between  px-2 top-0">
+        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
+            <span key={number} className="text-xs">{number} |</span>
+        ))}
+    </div>
+                      
                         <input
     type="range"
     min="0"
@@ -498,6 +525,12 @@ const erase = (e) => {
                     </div>
                     <div className=''>
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Contrast</label>
+                     
+                        <div className="flex justify-between  px-2 top-0">
+        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
+            <span key={number} className="text-xs">{number} |</span>
+        ))}
+    </div>
                         <input
                             type="range"
                             min="0"
@@ -510,7 +543,14 @@ const erase = (e) => {
                     </div>
 
                     <div>
+         
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Brightness</label>
+                      
+                        <div className="flex justify-between  px-2 top-0">
+        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
+            <span key={number} className="text-xs">{number} |</span>
+        ))}
+    </div>         
                         <input
                             type="range"
                             min="0"
@@ -540,6 +580,12 @@ const erase = (e) => {
                   
                     <div>
                     <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Zoom</label>
+  
+                    <div className="  px-2 absolute w-[70%]">
+        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
+            <span key={number} className="text-xs relative ml-2">{number} |</span>
+        ))}
+    </div>   
     <input
         type="range"
         min="10"
@@ -553,8 +599,9 @@ const erase = (e) => {
 
                     </div>
                     <div className="relative inline-block">
-  <label className='items-center mt-2 justify-center text-gray-700 font-bold rounded-md py-1 px-2 transform hover:scale-105 transition-transform duration-300' >Drawing Tools:</label>
+  {/* <label className='items-center mt-2 justify-center text-gray-700 font-bold rounded-md py-1 px-2 transform hover:scale-105 transition-transform duration-300' >Drawing Tools</label> */}
 </div>
+<div className="relative inline-block">
 <div className="relative inline-block">
   <button
     className={`mt-2 bg-gray-200 text-gray-700 px-8 py-1 rounded-md hover:bg-gray-300 transition-colors border border-gray-300 ${
@@ -574,17 +621,19 @@ const erase = (e) => {
   </button>
 </div>
 
+</div>
+
 
 
 
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Color</label>
+                        {/* <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Color</label> */}
                         <input
                             type="color"
                             value={currentColor}
                             onChange={(e) => handleColorChange(e.target.value)}
-                            className='w-full'
+                            className='w-full mt-1'
                         />
                     </div>
 
@@ -600,7 +649,7 @@ const erase = (e) => {
  style={{ height: '6px' }}           />
                     </div>
 
-                    <label className="flex items-center justify-center text-gray-700 font-bold rounded-md  py-2 px-4 transform hover:scale-105 transition-transform duration-300">
+                    <label className="flex items-center justify-center text-gray-700 font-bold rounded-md   transform hover:scale-105 transition-transform duration-300">
     Upload Image
     <input
         type="file"
