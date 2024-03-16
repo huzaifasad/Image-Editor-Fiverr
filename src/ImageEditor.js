@@ -22,7 +22,7 @@ export default function ImageEditor() {
     const imageCanvasRef = useRef(null);
     const drawingCanvasRef = useRef(null);
     const [firstImageLoad, setFirstImageLoad] = useState(true);
-    const [zoomLevel, setZoomLevel] = useState(50); // Default zoom level
+    const [zoomLevel, setZoomLevel] = useState(100); // Default zoom level
     const [drawingContextSettings, setDrawingContextSettings] = useState({
         strokeStyle: '#000000',
         lineWidth: 2,
