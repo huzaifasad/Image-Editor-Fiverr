@@ -465,11 +465,12 @@ const erase = (e) => {
                     
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Line Thickness</label>
                    
-                        <div className="flex justify-between  px-2 top-0">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
-            <span key={number} className="text-xs">{number} |</span>
-        ))}
-    </div>
+                        <div className="flex justify-between px-2 top-0">
+    {Array.from({ length: 15 }, (_, index) => (
+        <span key={index + 1} className="text-xs">{index + 1} |</span>
+    ))}
+</div>
+
                         <input
                             type="range"
                             min="0"
@@ -488,12 +489,11 @@ const erase = (e) => {
                     <div>
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Range</label>
                      
-                     
-                        <div className="flex justify-between  px-2 top-0">
-        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
-            <span key={number} className="text-xs">{number} |</span>
-        ))}
-    </div>
+                        <div className="flex justify-between px-2 top-0">
+    {Array.from({ length: 15 }, (_, index) => (
+        <span key={index - 7} className="text-[0.6rem]">{index - 7} |</span>
+    ))}
+</div>  
                         <input
                             type="range"
                             min="-200"
@@ -507,11 +507,12 @@ const erase = (e) => {
                     <div>
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Opacity</label>
                       
-                        <div className="flex justify-between  px-2 top-0">
-        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(number => (
-            <span key={number} className="text-xs">{number} |</span>
-        ))}
-    </div>
+                        <div className="flex justify-between px-2 top-0">
+    {Array.from({ length: 15 }, (_, index) => (
+        <span key={index + 1} className="text-xs">{index + 1} |</span>
+    ))}
+</div>
+
                       
                         <input
     type="range"
@@ -526,11 +527,11 @@ const erase = (e) => {
                     <div className=''>
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Contrast</label>
                      
-                        <div className="flex justify-between  px-2 top-0">
-        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
-            <span key={number} className="text-xs">{number} |</span>
-        ))}
-    </div>
+                        <div className="flex justify-between px-2 top-0">
+    {Array.from({ length: 15 }, (_, index) => (
+        <span key={index - 7} className="text-[0.6rem]">{index - 7} |</span>
+    ))}
+</div>  
                         <input
                             type="range"
                             min="0"
@@ -546,12 +547,11 @@ const erase = (e) => {
          
                         <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Brightness</label>
                       
-                        <div className="flex justify-between  px-2 top-0">
-        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
-            <span key={number} className="text-xs">{number} |</span>
-        ))}
-    </div>         
-                        <input
+                        <div className="flex justify-between px-2 top-0">
+    {Array.from({ length: 15 }, (_, index) => (
+        <span key={index - 7} className="text-[0.6rem]">{index - 7} |</span>
+    ))}
+</div>        <input
                             type="range"
                             min="0"
                             max="200"
@@ -580,12 +580,13 @@ const erase = (e) => {
                   
                     <div>
                     <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Zoom</label>
-  
-                    <div className="  px-2 absolute w-[70%]">
-        {[-4, -3, -2, -1, 0, 1, 2, 3, 4].map(number => (
-            <span key={number} className="text-xs relative ml-2">{number} |</span>
-        ))}
-    </div>   
+                    <div className="px-1 absolute w-[70%] ">
+    {Array.from({ length: 15 }, (_, index) => (
+        <span key={index - 7} className="text-[0.6rem] relative  mr-1">{index - 7} |</span>
+    ))}
+</div>
+
+
     <input
         type="range"
         min="10"
