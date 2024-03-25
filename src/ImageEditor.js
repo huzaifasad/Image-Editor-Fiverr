@@ -1,16 +1,16 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { FaUndo, FaRedo, FaDownload, FaPrint } from 'react-icons/fa';
-import { FaPencilAlt, FaEraser } from 'react-icons/fa';
 
 export default function ImageEditor() {
     const [image, setImage] = useState(null);
     const [previewImage, setPreviewImage] = useState(null);
     const [contrast, setContrast] = useState(100);
     const [brightness, setBrightness] = useState(100);
-    const [opacity, setOpacity] = useState(0);
+    const [opacity, setOpacity] = useState(100);
     const [grayscale, setGrayscale] = useState(0);
     const [sharpness, setSharpness] = useState(0);
-    const [extrasharp, setExtrasharp] = useState(0);
+    const [extrasharp, setExtrasharp] = useState(0); // Added extra sharpness state
     const [lineThickness, setLineThickness] = useState(2);
     const [isDrawing, setIsDrawing] = useState(false);
     const [tool, setTool] = useState('pencil');
@@ -18,67 +18,20 @@ export default function ImageEditor() {
     const [currentSize, setCurrentSize] = useState(2);
     const [undoStack, setUndoStack] = useState([]);
     const [redoStack, setRedoStack] = useState([]);
-    const [originalImage, setOriginalImage] = useState(null);
-    const imageCanvasRef = useRef(null);
-    const drawingCanvasRef = useRef(null);
-    const [firstImageLoad, setFirstImageLoad] = useState(true);
-    const [zoomLevel, setZoomLevel] = useState(100); // Default zoom level
-    const [drawingContextSettings, setDrawingContextSettings] = useState({
-        strokeStyle: '#000000',
-        lineWidth: 2,
-        globalCompositeOperation: 'source-over'
-    });
-    const [drawings, setDrawings] = useState([]); // Store drawings separately
-    const saveDrawingContextSettings = () => {
-        const drawingCanvas = drawingCanvasRef.current;
-        const ctx = drawingCanvas.getContext('2d');
-        setDrawingContextSettings({
-            strokeStyle: ctx.strokeStyle,
-            lineWidth: ctx.lineWidth,
-            globalCompositeOperation: ctx.globalCompositeOperation
-        });
-    };
+    const [originalImage, setOriginalImage] = useState(null); // Store original image
+    const canvasRef = useRef(null);
 
-    // Function to restore drawing context settings
-    const restoreDrawingContextSettings = () => {
-        const drawingCanvas = drawingCanvasRef.current;
-        const ctx = drawingCanvas.getContext('2d');
-        const { strokeStyle, lineWidth, globalCompositeOperation } = drawingContextSettings;
-        ctx.strokeStyle = strokeStyle;
-        ctx.lineWidth = lineWidth;
-        ctx.globalCompositeOperation = globalCompositeOperation;
-    };
-
-    const handleZoomChange = (e) => {
-        setZoomLevel(parseInt(e.target.value)); // Update zoom level based on the range input value
-    };
-    
     useEffect(() => {
         if (image) {
-            if (firstImageLoad) {
-                setContrast(100);
-                setBrightness(100);
-                setOpacity(100);
-                setGrayscale(0);
-                setSharpness(0);
-                setExtrasharp(0);
-                setLineThickness(2);
-                setCurrentColor('#000000');
-                setCurrentSize(2);
-                setUndoStack([]);
-                setRedoStack([]);
-                setFirstImageLoad(false);
-            }
+            setOriginalImage(image); // Store original image when a new image is uploaded
 
-            setOriginalImage(image);
-
-            const imageCanvas = imageCanvasRef.current;
-            const ctx = imageCanvas.getContext('2d');
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
             const img = new Image();
             img.onload = () => {
-                imageCanvas.width = img.width;
-                imageCanvas.height = img.height;
-
+                canvas.width = img.width;
+                canvas.height = img.height;
+    
                 const isNegative = contrast < 100;
                 const filter = `
                     contrast(${Math.abs(contrast)}%)
@@ -89,36 +42,23 @@ export default function ImageEditor() {
                 `;
                 ctx.filter = filter;
                 ctx.drawImage(img, 0, 0);
-                if (sharpness !== 0) {
-                    applySharpening(ctx, imageCanvas.width, imageCanvas.height, sharpness);
-                }
-        
-                if (extrasharp !== 0) {
-                    const imageData = ctx.getImageData(0, 0, imageCanvas.width, imageCanvas.height);
-                    const sharpenedData = extrashapfunction(imageData, extrasharp);
-                    ctx.putImageData(sharpenedData, 0, 0);
-                }
-                redrawDrawings()
-
-                setPreviewImage(imageCanvas.toDataURL());
+    
+                // Apply sharpening
+                applySharpening(ctx, canvas.width, canvas.height, sharpness);
+    
+                // Apply additional sharpening
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const sharpenedData = extrashapfunction(imageData, extrasharp);
+                ctx.putImageData(sharpenedData, 0, 0);
+    
+                setPreviewImage(canvas.toDataURL());
             };
             img.src = image;
         }
-    }, [image, contrast, brightness, opacity, grayscale, sharpness, extrasharp, firstImageLoad]);
-    const redrawDrawings = () => {
-        const drawingCanvas = drawingCanvasRef.current;
-        const ctx = drawingCanvas.getContext('2d');
+    }, [image, contrast, brightness, opacity, grayscale, sharpness, extrasharp]);
+    
 
-        drawings.forEach(({ x, y }, index) => {
-            if (index === 0) {
-                ctx.beginPath();
-                ctx.moveTo(x, y);
-            } else {
-                ctx.lineTo(x, y);
-                ctx.stroke();
-            }
-        });
-    };
+    // Apply sharpening to the canvas context
     const applySharpening = (ctx, width, height, sharpness) => {
         const imageData = ctx.getImageData(0, 0, width, height);
         const data = imageData.data;
@@ -129,7 +69,7 @@ export default function ImageEditor() {
             -1, -1, -1,
             -1, 9 + factor, -1,
             -1, -1, -1
-        ];
+        ]; // Kernel for sharpening (unsharp mask)
 
         for (let i = 0; i < data.length; i += 4) {
             let sumRed = 0;
@@ -151,6 +91,22 @@ export default function ImageEditor() {
         ctx.putImageData(imageData, 0, 0);
     };
 
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            setImage(reader.result);
+        };
+
+        if (file) {
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleContrastChange = (e) => {
+        setContrast(e.target.value);
+    };
     const extrashapfunction = (imageData, level) => {
         // Implementation remains the same
         const data = imageData.data;
@@ -201,69 +157,24 @@ export default function ImageEditor() {
 
         return imageData;
     };
-
-    const handleImageChange = (e) => {
-        const file = e.target.files[0];
-        const reader = new FileReader();
-
-        reader.onload = () => {
-            setImage(reader.result);
-            setContrast(100);
-            setBrightness(100);
-            setOpacity(0);
-            setGrayscale(0);
-            setSharpness(0);
-            setExtrasharp(0);
-            setFirstImageLoad(true);
-
-            const imageCanvas = imageCanvasRef.current;
-            const ctx = imageCanvas.getContext('2d');
-            ctx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
-
-            if (originalImage) {
-                const img = new Image();
-                img.onload = () => {
-                    ctx.drawImage(img, 0, 0);
-                };
-                img.src = originalImage;
-            }
-        };
-
-        if (file) {
-            reader.readAsDataURL(file);
-        } else {
-            setImage(null);
-        }
-    };
-
-    const handleContrastChange = (e) => {
-        setContrast(e.target.value);
-    };
-
     const handleBrightnessChange = (e) => {
         setBrightness(e.target.value);
     };
 
     const handleOpacityChange = (e) => {
-        const newOpacity = e.target.value;
-        const invertedOpacity = 100 - newOpacity;
-        setOpacity(invertedOpacity);
+        setOpacity(e.target.value);
     };
 
     const handleGrayscaleChange = (e) => {
         setGrayscale(e.target.value);
     };
 
-    const handleSharpnessChange = (e) => {
-        setSharpness(e.target.value);
-    };
-
-    const handleextraSharpenChange = (e) => {
-        setExtrasharp(e.target.value);
-    };
-
     const handleToolChange = (e) => {
         setTool(e.target.value);
+    };
+
+    const handleSharpnessChange = (e) => {
+        setSharpness(e.target.value);
     };
 
     const handleLineThicknessChange = (e) => {
@@ -278,9 +189,36 @@ export default function ImageEditor() {
         setCurrentSize(e.target.value);
     };
 
-  
+    const handleCanvasMouseDown = (e) => {
+        setIsDrawing(true);
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const x = e.nativeEvent.offsetX;
+        const y = e.nativeEvent.offsetY;
+    
+        if (tool === 'pencil' || tool === 'eraser') {
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.strokeStyle = tool === 'pencil' ? currentColor : '#ffffff'; // This line sets the stroke color
+            ctx.lineWidth = tool === 'eraser' ? lineThickness * 2 : currentSize; // This line sets the line width
+        }
+    };
+    
 
+    const handleCanvasMouseMove = (e) => {
+        if (!isDrawing) return;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+        const x = e.nativeEvent.offsetX;
+        const y = e.nativeEvent.offsetY;
+
+        if (tool === 'pencil' || tool === 'eraser') {
+            ctx.lineTo(x, y);
+            ctx.stroke();
+        }
+    };
     const handleReset = () => {
+        // Reset all filters and clear the canvas
         setContrast(100);
         setBrightness(100);
         setOpacity(100);
@@ -292,70 +230,39 @@ export default function ImageEditor() {
         setCurrentSize(2);
         setUndoStack([]);
         setRedoStack([]);
-        setImage(originalImage);
-        setZoomLevel(100);
-       
-        const drawingCanvas = drawingCanvasRef.current;
-        const ctx = drawingCanvas.getContext('2d');
-        ctx.clearRect(0, 0, drawingCanvas.width, drawingCanvas.height); // Clear the drawing canvas
-    
-        const imageCanvas = imageCanvasRef.current;
-        const imageCtx = imageCanvas.getContext('2d');
-        imageCtx.clearRect(0, 0, imageCanvas.width, imageCanvas.height);
-    
-        if (originalImage) {
-            const img = new Image();
-            img.onload = () => {
-                imageCtx.drawImage(img, 0, 0);
-            };
-            img.src = originalImage;
+        setImage(originalImage); // Set image back to original
+        setPreviewImage(null);
+    };
+    const handleCanvasMouseUp = () => {
+        if (tool === 'pencil' || tool === 'eraser') {
+            setIsDrawing(false);
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            setUndoStack([...undoStack, ctx.getImageData(0, 0, canvas.width, canvas.height)]);
+            setRedoStack([]); // Clear redo stack when new action is performed
         }
-    
-        // Clear drawings state
-        setDrawings([]);
     };
-    
-
-    const handleDownload = () => {
-        const imageCanvas = imageCanvasRef.current;
-        const drawingCanvas = drawingCanvasRef.current;
-        
-        // Adjust canvas size based on zoom level
-        const canvasWidth = imageCanvas.width * (zoomLevel / 100);
-        const canvasHeight = imageCanvas.height * (zoomLevel / 100);
-        
-        const mergedCanvas = document.createElement('canvas');
-        const mergedCtx = mergedCanvas.getContext('2d');
-    
-        mergedCanvas.width = canvasWidth;
-        mergedCanvas.height = canvasHeight;
-    
-        mergedCtx.drawImage(imageCanvas, 0, 0, canvasWidth, canvasHeight);
-        mergedCtx.drawImage(drawingCanvas, 0, 0, canvasWidth, canvasHeight);
-    
-        const link = document.createElement('a');
-        link.download = 'edited_image.png';
-        link.href = mergedCanvas.toDataURL();
-        link.click();
-    };
-    
-
     const handlePrint = () => {
-        const imageCanvas = imageCanvasRef.current;
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext('2d');
+    
+        // Open a new window with the canvas image
         const printWindow = window.open('', '_blank');
         printWindow.document.open();
-        printWindow.document.write('<img src="' + imageCanvas.toDataURL() + '" style="width:100%; height:auto;">');
+        printWindow.document.write('<img src="' + canvas.toDataURL() + '" style="width:100%; height:auto;">');
         printWindow.document.close();
+    
+        // After the image has loaded in the new window, trigger print
         printWindow.onload = function() {
             printWindow.print();
         };
     };
-
+    
     const handleUndo = () => {
         if (undoStack.length > 0) {
-            const drawingCanvas = drawingCanvasRef.current;
-            const ctx = drawingCanvas.getContext('2d');
-            setRedoStack([...redoStack, ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height)]);
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            setRedoStack([...redoStack, ctx.getImageData(0, 0, canvas.width, canvas.height)]);
             const lastAction = undoStack.pop();
             ctx.putImageData(lastAction, 0, 0);
             setUndoStack([...undoStack]);
@@ -364,212 +271,80 @@ export default function ImageEditor() {
 
     const handleRedo = () => {
         if (redoStack.length > 0) {
-            const drawingCanvas = drawingCanvasRef.current;
-            const ctx = drawingCanvas.getContext('2d');
-            setUndoStack([...undoStack, ctx.getImageData(0, 0, drawingCanvas.width, drawingCanvas.height)]);
+            const canvas = canvasRef.current;
+            const ctx = canvas.getContext('2d');
+            setUndoStack([...undoStack, ctx.getImageData(0, 0, canvas.width, canvas.height)]);
             const lastAction = redoStack.pop();
             ctx.putImageData(lastAction, 0, 0);
             setRedoStack([...redoStack]);
         }
     };
-    const draw = (e) => {
-        if (!isDrawing) return;
-        const drawingCanvas = drawingCanvasRef.current;
-        const ctx = drawingCanvas.getContext('2d');
-        const x = e.nativeEvent.offsetX;
-        const y = e.nativeEvent.offsetY;
 
-        ctx.lineTo(x, y);
-        ctx.stroke();
-
-        // Store drawings for redrawing after applying filters
-        setDrawings([...drawings, { x, y }]);
+    const handleDownload = () => {
+        const canvas = canvasRef.current;
+        const link = document.createElement('a');
+        link.download = 'edited_image.png';
+        link.href = canvas.toDataURL();
+        link.click();
     };
-
-    // Function to start drawing
-    const startDrawing = (e) => {
-        setIsDrawing(true);
-        const drawingCanvas = drawingCanvasRef.current;
-        const ctx = drawingCanvas.getContext('2d');
-        const x = e.nativeEvent.offsetX;
-        const y = e.nativeEvent.offsetY;
-
-        ctx.beginPath();
-        ctx.moveTo(x, y);
+    const handleextraSharpenChange = (e) => {
+        setExtrasharp(e.target.value);
     };
-
-    // Function to stop drawing
-    const endDrawing = () => {
-        setIsDrawing(false);
-    };
-// Function to handle mouse down event on the canvas
-const handleCanvasMouseDown = (e) => {
-    setIsDrawing(true);
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    const x = e.nativeEvent.offsetX;
-    const y = e.nativeEvent.offsetY;
-
-    if (tool === 'pencil' || tool === 'eraser') {
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.strokeStyle = tool === 'pencil' ? currentColor : '#ffffff'; // This line sets the stroke color
-        ctx.lineWidth = tool === 'eraser' ? lineThickness * 2 : currentSize; // This line sets the line width
-    }
-};
-
-    // Function to handle mouse move event on the canvas
-    const handleCanvasMouseMove = (e) => {
-        if (tool === 'pencil') {
-            draw(e);
-        } else if (tool === 'eraser') {
-            erase(e);
-        }
-    };
-
-    // Function to handle mouse up event on the canvas
-    const handleCanvasMouseUp = () => {
-        if (tool === 'pencil') {
-            endDrawing();
-        } else if (tool === 'eraser') {
-            setIsDrawing(false);
-        }
-    };
-const erase = (e) => {
-    if (!isDrawing) return;
-    const drawingCanvas = drawingCanvasRef.current;
-    const ctx = drawingCanvas.getContext('2d');
-    const x = e.nativeEvent.offsetX;
-    const y = e.nativeEvent.offsetY;
-
-    ctx.clearRect(x, y, currentSize, currentSize);
-};
-// Function to handle mouse up event on the canvas
-
     return (
-        <div className='h-screen w-screen flex bg-[#ff4500]'>
-        <div className='w-[72%] h-screen px-2'>
-            <div className='h-[97%]  w-[97%] flex items-center justify-center overflow-scroll mt-2'>
-              <canvas
-    key={image}
-    className="relative overflow-hidden bg-[#fff]"
-    ref={(canvas) => {
-        imageCanvasRef.current = canvas;
-        drawingCanvasRef.current = canvas;
-    }}
-    onMouseDown={handleCanvasMouseDown}
+        <div className='h-screen w-screen flex bg-[#D2DE32]'>
+            <div className='w-[75%] px-2'>
+                <div className='bg-[#fff] text-5xl   h-full  w-full flex items-center justify-center'>
+                <div className='bg-[#fff] text-5xl   h-full w-full flex items-center justify-center'>
+    <canvas
+        ref={canvasRef}
+        onMouseDown={handleCanvasMouseDown}
         onMouseMove={handleCanvasMouseMove}
         onMouseUp={handleCanvasMouseUp}
-    style={{ transform: `scale(${zoomLevel / 100})`, transformOrigin: '' }}
+        style={{ border: '0px solid black', cursor: 'crosshair', width: '100%', height: '100%' }}
+    />
+</div>
 
-/>
-
+                </div>
             </div>
-        </div>
-            <div className='w-[24%] h-screen'>
-                <div className=' h-full '>
-                <div>
-                    
-                        <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Line Thickness</label>
-                   
-                        <div className="flex justify-between px-2 top-0">
-    {Array.from({ length: 15 }, (_, index) => (
-        <span key={index + 1} className="text-xs">{index + 1} |</span>
-    ))}
-</div>
+            <div className='w-[24%]'>
+                <div className=' h-screen '>
 
-                        <input
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={extrasharp}
-                            onChange={handleextraSharpenChange}
-                            className="custom-range ml-2 w-full h-4"                         
- style={{ height: '6px' }}               
- 
- 
- />
-
-
-                    </div>
-                    
-                    <div>
-                        <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Range</label>
-                     
-                        <div className="flex justify-between px-2 top-0">
-    {Array.from({ length: 15 }, (_, index) => (
-        <span key={index - 7} className="text-[0.6rem]">{index - 7} |</span>
-    ))}
-</div>  
-                        <input
-                            type="range"
-                            min="-200"
-                            max="200"
-                            value={sharpness}
-                            onChange={handleSharpnessChange}
-                            
-                            className="custom-range ml-2 w-full h-4"             
- style={{ height: '6px' }}           />
-                    </div>
-                    <div>
-                        <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Opacity</label>
-                      
-                        <div className="flex justify-between px-2 top-0">
-    {Array.from({ length: 15 }, (_, index) => (
-        <span key={index + 1} className="text-xs">{index + 1} |</span>
-    ))}
-</div>
-
-                      
-                        <input
-    type="range"
-    min="0"
-    max="100"
-    value={100 - opacity} // Invert the value for the slider
-    onChange={handleOpacityChange}
-    className="custom-range ml-2 w-full h-4" // Adjust the height here
-    style={{ height: '6px' }} // Adjust the width here
-/>
-                    </div>
                     <div className=''>
-                        <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Contrast</label>
-                     
-                        <div className="flex justify-between px-2 top-0">
-    {Array.from({ length: 15 }, (_, index) => (
-        <span key={index - 7} className="text-[0.6rem]">{index - 7} |</span>
-    ))}
-</div>  
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-lg py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Contrast:</label>
                         <input
                             type="range"
                             min="0"
                             max="200"
                             value={contrast}
                             onChange={handleContrastChange}
-                            className="custom-range ml-2 w-full"   
-                            style={{ height: '6px' }}                         />
+                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden border border-gray-300 shadow-md"
+                        />
                        
                     </div>
 
                     <div>
-         
-                        <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Brightness</label>
-                      
-                        <div className="flex justify-between px-2 top-0">
-    {Array.from({ length: 15 }, (_, index) => (
-        <span key={index - 7} className="text-[0.6rem]">{index - 7} |</span>
-    ))}
-</div>        <input
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Brightness:</label>
+                        <input
                             type="range"
                             min="0"
                             max="200"
                             value={brightness}
                             onChange={handleBrightnessChange}
-                            className="custom-range ml-2 w-full"   
-                            style={{ height: '6px' }}  
-                                           />
+                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
+                        />
                     </div>
 
-                
+                    <div>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Opacity:</label>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={opacity}
+                            onChange={handleOpacityChange}
+                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
+                        />
+                    </div>
 
                     {/* <div>
                         <label className='flex'>Grayscale:</label>
@@ -582,82 +357,69 @@ const erase = (e) => {
                         />
                     </div> */}
 
-                   
-
-                  
                     <div>
-                    <label className='flex items-center  text-gray-700 font-bold rounded-md  px-2 transform hover:scale-105 transition-transform duration-300'>Zoom</label>
-                    <div className="px-1 absolute w-[70%] ">
-    {Array.from({ length: 15 }, (_, index) => (
-        <span key={index - 7} className="text-[0.6rem] relative  mr-1">{index - 7} |</span>
-    ))}
-</div>
-
-
-    <input
-        type="range"
-        min="10"
-        max="200"
-        value={zoomLevel}
-        onChange={handleZoomChange}
-        className="custom-range ml-2 w-[70%]"
-        style={{ height: '6px' }}
-    />
-      <button className="ml-2 mt-2 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors" onClick={handleReset}>Reset</button>
-
-                    </div>
-                    <div className="relative inline-block">
-  {/* <label className='items-center mt-2 justify-center text-gray-700 font-bold rounded-md py-1 px-2 transform hover:scale-105 transition-transform duration-300' >Drawing Tools</label> */}
-</div>
-<div className="relative inline-block">
-<div className="relative inline-block">
-  <button
-    className={`mt-2 bg-gray-200 text-gray-700 px-8 py-1 rounded-md hover:bg-gray-300 transition-colors border border-gray-300 ${
-      tool === 'pencil' ? 'bg-blue-400 text-white' : ''
-    }`}
-    onClick={() => setTool('pencil')}
-  >
-    Pencil
-  </button>
-  <button
-    className={`ml-2 mt-2 bg-gray-200 text-gray-700 px-8 py-1 rounded-md hover:bg-gray-300 transition-colors border border-gray-300 ${
-      tool === 'eraser' ? 'bg-blue-400 text-white' : ''
-    }`}
-    onClick={() => setTool('eraser')}
-  >
-    Eraser
-  </button>
-</div>
-
-</div>
-
-
-
-
-
-                    <div>
-                        {/* <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Color</label> */}
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Range</label>
                         <input
-                            type="color"
-                            value={currentColor}
-                            onChange={(e) => handleColorChange(e.target.value)}
-                            className='w-full mt-1'
+                            type="range"
+                            min="-200"
+                            max="200"
+                            value={sharpness}
+                            onChange={handleSharpnessChange}
+                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
                         />
                     </div>
 
                     <div>
-                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-xs py-1 px-2 transform hover:scale-105 transition-transform duration-300'>Size</label>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Line Thickness</label>
+                        <input
+                            type="range"
+                            min="0"
+                            max="100"
+                            value={extrasharp}
+                            onChange={handleextraSharpenChange}
+                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
+                                                   />
+                    </div>
+                    <div className="relative inline-block">
+  <label className=' items-center mt-2 justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300' >Drawing Tools:</label>
+  <button className=' ml-8 mt-5 bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300 transition-colors' onClick={handleReset}>
+                        Reset
+                    </button>
+  <select
+    value={tool}
+    onChange={handleToolChange}
+    className="block appearance-none bg-gray-100 border border-gray-300 text-gray-700 py-2 px-3 pr-8 rounded-md leading-tight focus:outline-none focus:bg-white focus:border-gray-500"
+  >
+    <option value="pencil">Pencil</option>
+    <option value="eraser">Eraser</option>
+  </select>
+
+</div>
+
+
+
+                    <div>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Color:</label>
+                        <input
+                            type="color"
+                            value={currentColor}
+                            onChange={(e) => handleColorChange(e.target.value)}
+                        />
+                    </div>
+
+                    <div>
+                        <label className='flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300'>Size:</label>
                         <input
                             type="range"
                             min="1"
                             max="20"
                             value={currentSize}
                             onChange={handleSizeChange}
- className="w-full"                
- style={{ height: '6px' }}           />
+                            className="appearance-none block w-full h-2 bg-gray-200 rounded-full outline-none overflow-hidden"
+                        />
                     </div>
 
-                    <label className="flex items-center justify-center text-gray-700 font-bold rounded-md   transform hover:scale-105 transition-transform duration-300">
+                    <label className="flex items-center justify-center text-gray-700 font-bold rounded-md shadow-md py-2 px-4 transform hover:scale-105 transition-transform duration-300">
     Upload Image
     <input
         type="file"
