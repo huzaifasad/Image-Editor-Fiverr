@@ -440,7 +440,7 @@ const erase = (e) => {
 // Function to handle mouse up event on the canvas
 
     return (
-        <div className='h-screen w-screen flex bg-[#ff4500]'>
+        <div className='h-screen w-screen flex bg-[#F8DE7F]'>
         <div className='w-[72%] h-screen px-2'>
             <div className='h-[97%]  w-[97%] flex items-center justify-center overflow-scroll mt-2'>
               <canvas
