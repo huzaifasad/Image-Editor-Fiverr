@@ -403,13 +403,20 @@ export default function ImageEditor() {
         setIsDrawing(false);
     };
 // Function to handle mouse down event on the canvas
- const handleCanvasMouseDown = (e) => {
-        if (tool === 'pencil') {
-            startDrawing(e);
-        } else if (tool === 'eraser') {
-            setIsDrawing(true);
-        }
-    };
+const handleCanvasMouseDown = (e) => {
+    setIsDrawing(true);
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext('2d');
+    const x = e.nativeEvent.offsetX;
+    const y = e.nativeEvent.offsetY;
+
+    if (tool === 'pencil' || tool === 'eraser') {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.strokeStyle = tool === 'pencil' ? currentColor : '#ffffff'; // This line sets the stroke color
+        ctx.lineWidth = tool === 'eraser' ? lineThickness * 2 : currentSize; // This line sets the line width
+    }
+};
 
     // Function to handle mouse move event on the canvas
     const handleCanvasMouseMove = (e) => {
