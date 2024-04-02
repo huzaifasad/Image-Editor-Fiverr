@@ -378,13 +378,18 @@ export default function ImageEditor() {
         const ctx = drawingCanvas.getContext('2d');
         const x = e.nativeEvent.offsetX;
         const y = e.nativeEvent.offsetY;
-
+    
+        // Update context settings
+        ctx.strokeStyle = currentColor; // Set current color
+        ctx.lineWidth = currentSize; // Set current size
+    
         ctx.lineTo(x, y);
         ctx.stroke();
-
+    
         // Store drawings for redrawing after applying filters
         setDrawings([...drawings, { x, y }]);
     };
+    
 
     // Function to start drawing
     const startDrawing = (e) => {
